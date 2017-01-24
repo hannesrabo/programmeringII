@@ -39,6 +39,11 @@ freq_add(Char, [{Char, Occ} | Rest]) ->
 freq_add(Char, [Head|Rest]) ->
     [Head|freq_add(Char, Rest)].
 
+
+
+
+
+
 %This function cunstructs the huffman tree from a list of frequencies
 huffman(Freq) ->
     huffman_construct_tree(huffman_order(Freq, [])).
@@ -46,7 +51,7 @@ huffman(Freq) ->
 %Construct the huffman tree from a sorted list of leafs
 %Adds the two first elements together and then their values. This is inserted at the correct position in the tree
 huffman_construct_tree([E1 = {_, V1}, E2 = {_, V2}]) ->
-    [{{E1, E2}, V1+V2}];
+    {{E1, E2}, V1+V2};
 %This makes the single element appear last in the list (not wanted?)
 % huffman_construct_tree([{_, V1} = H1,{_, V2} =  H2, T]) ->
 %     [{{H1, H2}, V1 + V2}, T];
@@ -59,6 +64,7 @@ huffman_order([], Freq_sorted) ->
 huffman_order([Freq_h|Freq_t], Freq_sorted) ->
     huffman_order(Freq_t, huffman_insert(Freq_h, Freq_sorted)).
 
+
 %Insert a leaf at the correct location.
 huffman_insert(Leaf, []) ->
     [Leaf];
@@ -68,17 +74,26 @@ huffman_insert(Leaf, Trailing) ->
     [Leaf | Trailing].
 
 
-% encode_table({C, _})
-%
-% encode_table([Head | Tree]) ->
-%
-%     .
+
+
+%Creates the encoded huffman table
+%If there are any sub-branches left
+encode_table(Table) ->
+    encode_table(Table, []).
+
+encode_table({{Branch1, Branch2}, _}, List) ->
+    encode_table(Branch1, [0 | List]) ++ encode_table(Branch2, [1 | List]);
+%Else : we have reached the bottom of the tree.
+encode_table({C, _}, List) ->
+    [{C, List}].
+
+
 %
 % decode_table(_Tree) ->
 %     .
 %
-% encode(_Text, _Table) ->
-%     .
-%
+encode(_Text, _Table) ->
+    .
+
 % decode(_Seq, _Tabl) ->
 %     .
