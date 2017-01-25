@@ -7,6 +7,10 @@ sample() ->
 text() ->
     "tttccdefghhhhh".
 
+
+test() ->
+    encode(text(), encode_table(tree(text()))).
+
 % test() ->
 %     Sample = sample(),
 %     Tree = tree(Sample).
@@ -21,7 +25,12 @@ tree(Sample) ->
     Freq = freq(Sample),
     huffman(Freq).
 
+
+
+
 %Find the frequency of the chars in the sample (external).
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 freq(Sample) ->
     freq(Sample, []).
 
@@ -44,7 +53,9 @@ freq_add(Char, [Head|Rest]) ->
 
 
 
-%This function cunstructs the huffman tree from a list of frequencies
+%Cunstructs the huffman tree from a list of frequencies
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 huffman(Freq) ->
     huffman_construct_tree(huffman_order(Freq, [])).
 
@@ -77,6 +88,8 @@ huffman_insert(Leaf, Trailing) ->
 
 
 %Creates the encoded huffman table
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 %If there are any sub-branches left
 encode_table(Table) ->
     encode_table(Table, []).
@@ -88,12 +101,25 @@ encode_table({C, _}, List) ->
     [{C, List}].
 
 
-%
-% decode_table(_Tree) ->
-%     .
-%
-encode(_Text, _Table) ->
-    .
 
-% decode(_Seq, _Tabl) ->
-%     .
+
+
+%Encode the table as a list of 1's and 0's
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%Only one char left!
+encode([Char], Table) ->
+    encode_char(Char, Table);
+
+%Add the first encoded char to the rest of the string (encoded)
+encode([Char|Text_left], Table) ->
+    encode_char(Char, Table) ++ encode(Text_left, Table).
+
+%Encode a char using the encoded huffman table
+encode_char(Char, [{Data_char, Data} | Table_left]) ->
+    if
+        Char == Data_char ->
+            Data;
+        true ->
+            encode_char(Char, Table_left)
+    end.
