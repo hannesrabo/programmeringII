@@ -9,7 +9,22 @@ text() ->
 
 
 test() ->
-    encode(text(), encode_table(tree(text()))).
+    Text = sample(),
+    io:fwrite("String: "),
+    io:fwrite(Text),
+    io:fwrite("~n~nTree: "),
+    T = tree(Text),
+    io:write(T),
+    io:fwrite("~n~nEnc. table:"),
+    E = encode_table(T),
+    io:write(E),
+    io:fwrite("~n~nEncoded:"),
+    D = encode(Text, E),
+    io:write(D),
+    io:fwrite("~n~nDecoded:"),
+    Decoded = decode(D, E),
+    io:fwrite(Decoded),
+    io:fwrite("~n").
 
 % test() ->
 %     Sample = sample(),
@@ -98,8 +113,7 @@ encode_table({{Branch1, Branch2}, _}, List) ->
     encode_table(Branch1, [0 | List]) ++ encode_table(Branch2, [1 | List]);
 %Else : we have reached the bottom of the tree.
 encode_table({C, _}, List) ->
-    [{C, List}].
-
+    [{C, lists:reverse(List)}].
 
 
 
@@ -123,3 +137,47 @@ encode_char(Char, [{Data_char, Data} | Table_left]) ->
         true ->
             encode_char(Char, Table_left)
     end.
+
+
+
+
+%Decode the string of 1's and 0's
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+decode([], _Table) ->
+    [];
+decode(Seq, Table) ->
+    {Char, Rest} = decode_char(Seq, 1, Table),
+    [Char | decode(Rest, Table)].
+
+%Check the sequence in the decode table
+decode_char(Seq, N, Table) ->
+
+    %Extracts a code of N "bits"
+    {Code, Rest} = lists:split(N, Seq),
+
+    %Match the code to the table.
+    case lists:keyfind(Code, 2, Table) of
+
+        %If it's found
+        {Char, Code} ->
+            {Char, Rest};
+
+        %If it's not found
+        false ->
+            %Try again with a code with one more in length.
+            decode_char(Seq, N + 1, Table)
+    end.
+
+
+
+
+
+
+
+
+
+
+
+%
