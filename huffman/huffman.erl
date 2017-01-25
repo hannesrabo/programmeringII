@@ -7,6 +7,30 @@ sample() ->
 text() ->
     "tttccdefghhhhh".
 
+test_q() ->
+    Text = read("kallocain.txt", 1000000000),
+    io:fwrite("File read!~n"),
+
+    T = tree(Text),
+    E = encode_table(T),
+    io:fwrite("~nEncoding table created!"),
+
+    D = encode(Text, E),
+    io:fwrite("~nText encoded!"),
+
+    Bytes = split_bytes(D),
+    Bin = list_to_binary(Bytes),
+    io:fwrite("~nEncoded as binary!"),
+
+    file:write_file("out.bin", Bin),
+    io:fwrite("~nCreated binary!"),
+
+    {ok, _} = file:read_file("out.bin"),
+    io:fwrite("~nRead binary!"),
+
+    _ = decode(D, E),
+    io:fwrite("~nDecoded!"),
+    io:fwrite("~n").
 
 test() ->
     Text = read("kallocain.txt", 1000000000),
