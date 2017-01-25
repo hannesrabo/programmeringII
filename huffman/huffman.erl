@@ -9,7 +9,45 @@ text() ->
 
 
 test() ->
-    Text = sample(),
+    Text = read("kallocain.txt", 1000000000),
+    io:fwrite("String: "),
+    io:fwrite(Text),
+
+    io:fwrite("~n~nTree: "),
+    T = tree(Text),
+    io:write(T),
+
+    io:fwrite("~n~nEnc. table:"),
+    E = encode_table(T),
+    io:write(E),
+
+    io:fwrite("~n~nEncoded:"),
+    D = encode(Text, E),
+    io:write(D),
+
+    io:fwrite("~n~nByte-encoded:"),
+    Bytes = split_bytes(D),
+    io:write(Bytes),
+
+    io:fwrite("~n~nBinary:"),
+    Bin = list_to_binary(Bytes),
+    io:write(Bin),
+
+    file:write_file("out.bin", Bin),
+    io:fwrite("~n~nCreated binary!"),
+
+    {ok, R_bin} = file:read_file("out.bin"),
+    io:fwrite("~n~nRead binary!"),
+    io:write(R_bin),
+
+    io:fwrite("~n~nDecoded:"),
+    Decoded = decode(D, E),
+    io:fwrite(Decoded),
+    io:fwrite("~n").
+
+
+test1() ->
+    Text = text(),
     io:fwrite("String: "),
     io:fwrite(Text),
     io:fwrite("~n~nTree: "),
@@ -17,23 +55,20 @@ test() ->
     io:write(T),
     io:fwrite("~n~nEnc. table:"),
     E = encode_table(T),
-    io:write(E),
-    io:fwrite("~n~nEncoded:"),
-    D = encode(Text, E),
-    io:write(D),
-    io:fwrite("~n~nDecoded:"),
-    Decoded = decode(D, E),
-    io:fwrite(Decoded),
-    io:fwrite("~n").
+    io:write(E).
 
-% test() ->
-%     Sample = sample(),
-%     Tree = tree(Sample).
-    % Encode = encode_table(Tree),
-    % Decode = decode_table(Tree),
-    % Text = text(),
-    % Seq = encode(Text, Encode),
-    % Text = decode(Seq, Decode).
+read(File, N) ->
+    {ok, Fd} = file:open(File, [read, binary]),
+    {ok, Binary} = file:read(Fd, N),
+    file:close(Fd),
+
+    case unicode:characters_to_list(Binary, utf8) of
+        {incomplete, List, _} ->
+            List;
+        List ->
+            List
+    end.
+
 
 % %Creates the huffman tree from frequencies in the text
 tree(Sample) ->
@@ -172,7 +207,27 @@ decode_char(Seq, N, Table) ->
 
 
 
+%Create a byte list from the list of 1/0
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+split_bytes([]) ->
+    [];
+split_bytes(String) ->
+    %Extracts one "byte"
+    try lists:split(8, String) of
+        {Byte, Rest} -> [create_byte(Byte) | split_bytes(Rest)]
+    catch
+        _:_ ->
+            [create_byte(String)]
+    end.
+
+create_byte(Byte_representation) ->
+    create_byte(Byte_representation, 128).
+
+create_byte([], _) ->
+    0;
+create_byte([Bit| Rest], N) ->
+    N * Bit + create_byte(Rest, N div 2).
 
 
 
