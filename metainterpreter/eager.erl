@@ -1,5 +1,5 @@
 -module(eager).
--export([eval_expr/2, eval_match/3]).
+-export([eval_expr/2, eval_match/3, eval/1]).
 
 
 % Evaluating a atom results in a atom
@@ -55,3 +55,64 @@ eval_match({cons, Pat1, Pat2}, [H|T], Env) ->
     end;
 eval_match(_, _, _) ->
     fail.
+
+
+% [{switch, {atm, a}, [{b, [{match, {var, x}, {atm, b}}]},{a, [{match, {var, x}, {atm, c}}]}]}]
+eval_switch(_, [], Env) ->
+    {ok, Env};
+eval_switch(Expr, [{Guard, ExecSeq}|ExpressionList], Env) ->
+    io:fwrite("~n Expr:"),
+    io:write(Expr),
+    io:fwrite("~n Guard:"),
+    io:write(Guard),
+
+    case eval_match(Guard, Expr, Env) of
+        fail ->
+            io:fwrite("~n Error in match:"),
+            eval_switch(Expr, ExpressionList, Env);
+        {ok, Env2} ->
+            io:fwrite("~n Evaluating:"),
+            io:write(ExecSeq),
+            case eval_seq(ExecSeq, Env2) of
+                error ->
+                    error;
+                {_, Env3} ->
+                    {ok, Env3}
+            end
+    end.
+
+% Evaluation of sequences
+
+eval(Seq) ->
+    eval_seq(Seq, env:new() ).
+
+
+eval_seq([{switch, Expr, List} | Seq], Env) ->
+    io:fwrite("Now in here"),
+
+    case eval_switch(Expr, List, Env) of
+        error ->
+            error;
+
+        {ok, Env2} ->
+            eval_seq(Seq, Env2)
+    end;
+
+eval_seq([{match, Ptr, Exp}|Seq], Env) ->
+    case eval_expr(Exp, Env) of
+        error ->
+            error;
+
+        {ok, Str} ->
+            case eval_match(Ptr, Str, Env) of
+                fail ->
+                    error;
+                {ok, Env2} ->
+                    eval_seq(Seq, Env2)
+            end
+    end;
+eval_seq([], Env) ->
+    {ok, Env};
+
+eval_seq([Exp], Env) ->
+    {eval_expr(Exp, Env), Env}.
