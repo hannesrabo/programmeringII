@@ -17,11 +17,18 @@ receiver(Name) ->
     receiver(Name).
 
 start() ->
-    Node = io:get_line("Server IP: "),
+    SNode = io:get_line("Server name@host: "),
+    Node = list_to_atom(string:left(SNode, string:len(SNode) - 1)),
     Name = io:get_line("Username: "),
 
-    % Connecting
-    {server, Node} ! {pid, self()},
+    PName = '123', %list_to_atom(io_lib:format(rand:uniform(500))),
+    Pid = spawn(client, receiver, [Node]),
+    register(PName, Pid),
 
-    register(client, spawn(client, receiver, [Node])),
-    transmit(Name, Node).
+    % Connecting
+    io:fwrite("~nConnecting to host: "),
+    io:write(Node),
+    Message = {connect, node(), PName, Name},
+    {server, Node} ! Message.
+
+    % transmit(Name, Node).

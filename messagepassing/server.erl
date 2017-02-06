@@ -1,21 +1,27 @@
 -module(server).
 -compile(export_all).
 
-transmitter(Name, Node) ->
-    io:write(Name),
-    String = io:get_line(">"),
-    {client, Node} ! {message, String},
+transmitter(Node, PName, Name) ->
+    io:write(Node),
     io:fwrite("~n"),
-    transmitter(Name, Node).
+    io:write(PName),
+    io:fwrite("~n"),
+    io:write(Name),
+    io:fwrite("~n"),
+
+    String = io:get_line(">"),
+    {PName, Node} ! {message, String},
+    io:fwrite("~n"),
+    transmitter(Name, PName, Node).
 
 receiver(Name) ->
     receive
-        {message, Var} ->
-            io:format(Var);
-
-        {pid, Pid} ->
-            transmitter(Name, Pid);
-
+        % {message, Var} ->
+        %     io:format(Var);
+        %
+        {connect, Node, PName, Name} ->
+            transmitter(Node, PName, Name);
+        %
         Var ->
             io:write(Var)
     end,

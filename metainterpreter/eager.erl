@@ -27,8 +27,16 @@ eval_expr({cons, Expr1, Expr2}, Env) ->
                 {ok, Val2} ->
                     {ok, [Val1|Val2]}
             end
-    end.
+    end;
 
+eval_expr({switch, Expr, List}, Env) ->
+    case eval_switch(Expr, List, Env) of
+        error ->
+            error;
+
+        {ok, Val} ->
+            {ok, Val}
+    end.
 
 
 % Pattern, Datastructure, Environment
@@ -57,7 +65,7 @@ eval_match(_, _, _) ->
     fail.
 
 
-% [{switch, {atm, a}, [{b, [{match, {var, x}, {atm, b}}]},{a, [{match, {var, x}, {atm, c}}]}]}]
+% [{switch, {atm, a}, [{{atm, b}, [{match, {var, x}, {atm, b}}]},{{atm, a}, [{match, {var, x}, {atm, c}}]}]}]
 eval_switch(_, [], Env) ->
     {ok, Env};
 eval_switch(Expr, [{Guard, ExecSeq}|ExpressionList], Env) ->
@@ -77,6 +85,7 @@ eval_switch(Expr, [{Guard, ExecSeq}|ExpressionList], Env) ->
                 error ->
                     error;
                 {_, Env3} ->
+                    io:fwrite("~n"),
                     {ok, Env3}
             end
     end.
@@ -86,17 +95,6 @@ eval_switch(Expr, [{Guard, ExecSeq}|ExpressionList], Env) ->
 eval(Seq) ->
     eval_seq(Seq, env:new() ).
 
-
-eval_seq([{switch, Expr, List} | Seq], Env) ->
-    io:fwrite("Now in here"),
-
-    case eval_switch(Expr, List, Env) of
-        error ->
-            error;
-
-        {ok, Env2} ->
-            eval_seq(Seq, Env2)
-    end;
 
 eval_seq([{match, Ptr, Exp}|Seq], Env) ->
     case eval_expr(Exp, Env) of
