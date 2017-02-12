@@ -18,6 +18,7 @@ wait(N, Chopsticks) ->
             exit(abort)
     end.
 
+
 initBench() ->
     C1 = chopstick:start(),
     C2 = chopstick:start(),
