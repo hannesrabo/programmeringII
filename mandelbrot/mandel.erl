@@ -1,16 +1,12 @@
 -module(mandel).
--export([mandelbrot/6, mandelbrot_p/7, mandelbrot_c/7]).
+-export([mandelbrot/6, mandelbrot_p/7]).
 
 mandelbrot(Width, Height, X, Y, K, Depth) ->
     Trans = fun(W, H) ->
 		    cmplx:new(X + K*(W-1), Y - K*(H-1))
 	    end,
-    rows(Width, Height, Trans, Depth, []).
+    lists:reverse(rows(0, Width, Height, Trans, Depth, [])).
 
-
-%% Generate the image (and reverse it)
-rows(Width, Height, Trans, Depth, List) ->
-    lists:reverse(rows(0, Width, Height, Trans, Depth, List)).
 
 %% Generate the rows (backwards)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -136,98 +132,18 @@ row_p(X, _, X, _, _, _, List) ->
 row_p(X, Y, Width, Height, Trans, Depth, List) ->
     %% Generate the complex number associated with the pixel + 
     %% Calculate the "depth"
-    Num = brot:mandelbrot_p(Trans(X, Y), Depth),
     
+%   {Num_t, Z} = brot:mandelbrot_p(Trans(X, Y), Depth),
+    {Cr, Ci} = Trans(X, Y),
+    {Num, Zr, Zi} = brot:test_c(float(Cr), float(Ci), Depth),
     %% Convert to color
-    Col = color:convert(Num, Depth),
-    
+    %% Col = color:convert(Num, Depth),
+%   io:format("~w ~w ~w ~w~n", [Num_t, Num, Cr, Ci]),
+
+    Col = color:fancy_conv(Num, Depth, {Zr, Zi}),
+
     %% Insert into list
     row_p(X + 1, Y, Width, Height, Trans, Depth, [Col | List]).
 
 
 
-
-
-
-
-%% Trying to utilize caching
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-mandelbrot_c(Width, Height, X, Y, K, Depth, Threads) ->
-    T1 = X - K,
-    T2 = Y + K,
-    Trans = fun(W, H) ->
-		    cmplx:new(T1 + K * W, T2 - K * H)
-	    end,
-    Chunk = trunc(Height / Threads + 1),
-    %% Distribute problem over many threads
-    io:format("Spawning ~w threads~n", [Threads]),
-    mandel_spawn_threads_c(Width, 0, Chunk, Height, Trans, Depth, 
-			 0, self()),
-
-    %% Receive data from all threads
-    %% Sort the data on the first element (id)
-    List = lists:keysort(1, mandelbrot_receiver(Threads, [])),
-    %% Create the list
-    mandelbrot_create_list(List).
-
-mandel_spawn_threads_c(_, Start, _, Height, _, _, _, _) 
-  when (Start >= Height) ->
-    ok;
-mandel_spawn_threads_c(Width, Start, Chunk, Height, Trans, Depth, Id, Collector)->
-    %% Calculate the height of this chunk
-    
-    Temp = Start + Chunk,
-    if
-	(Temp < Height) -> 
-	    StopHeight = Temp;
-	true ->
-	    StopHeight = Height
-    end,
-    
-    %% Spawn thread
-    spawn(fun() -> rows_cr(Start, Width, StopHeight, Trans, 
-			   Depth, Id, Collector) 
-	  end),
-
-    %%Continue to spawn threads
-    mandel_spawn_threads_c(Width, Start + Chunk, Chunk, Height, Trans, 
-			 Depth, Id+1, Collector).
-
-
-%% Generate the image chunk (and reverse it)
-rows_cr(Start, Width, StopHeight, Trans, Depth, Id, Collector) ->
-    List = [],
-    AlgProv = brot:initiate(),
-    Data = lists:reverse(rows_c(Start, Width, StopHeight, Trans, Depth, List, AlgProv)),
-    Collector ! {Id, Data}.
-
-%% Generate the rows (backwards)
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%% Base: If we are at the end of the height
-rows_c(Y, _, Y, _, _, List, _) ->
-    List;
-rows_c(Y, Width, Height, Trans, Depth, List, AlgProv) ->
-    Row = lists:reverse(row_c(0, Y, Width, Height, Trans, Depth, [], AlgProv)),
-    rows_c(Y + 1, Width, Height, Trans, Depth, [Row| List], AlgProv).
-    
-
-
-%% Generate a row of pixels (backwards)
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%% If we reached the end of the row
-row_c(X, _, X, _, _, _, List, _) ->
-    List;
-
-row_c(X, Y, Width, Height, Trans, Depth, List, AlgProv) ->
-    %% Generate the complex number associated with the pixel + 
-    %% Calculate the "depth"
-    Num = brot:test_c(Trans(X, Y), Depth, AlgProv),
-    
-    %% Convert to color
-    Col = color:convert(Num, Depth),
-    
-    %% Insert into list
-    row_c(X + 1, Y, Width, Height, Trans, Depth, [Col | List], AlgProv).

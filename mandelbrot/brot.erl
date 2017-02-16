@@ -1,5 +1,9 @@
 -module(brot).
--export([mandelbrot/2, mandelbrot_p/2, test_c/3, initiate/0]).
+-export([mandelbrot/2, mandelbrot_p/2, test_c/3, init/0]).
+-on_load(init/0).
+
+init() ->
+    ok = erlang:load_nif("./brot_c", 0).
 
 
 %% Complex number c and max iterations M
@@ -19,7 +23,7 @@ mandelbrot_p({Cr, Ci}, M) ->
 	(Val > Test) -> 
 	    test_p(0, 0, 0, 0, 0, Cr, Ci, M);
 	true -> 
-	    0
+	    {0, {Cr,Ci}}
     end.
 
 
@@ -47,52 +51,23 @@ test(I, Z, C, M) ->
 
 
 %% Hopefully more performant method.
-test_p(I, _, _, _, _, _, _, M) when (I >= M)->
-    0;
-test_p(I, _, _, Zsr, Zsi, _, _, _) when ((Zsr + Zsi) >= 4)->
-    I;
+test_p(I, _Zr, _Zi, _, _, Cr, Ci, M) when (I >= M)->
+    {0, {Cr, Ci}};
+test_p(I, Zr, Zi, Zsr, Zsi, _, _, _) when ((Zsr + Zsi) >= 4)->
+    {I, {Zr, Zi}};
 test_p(I, Zr, Zi, Zsr, Zsi, Cr, Ci, M) ->
     Tmp = (Zr * Zi),
     Znr = Zsr - Zsi + Cr,
     Zni = Tmp + Tmp + Ci,
-    
+    io:format("~w ~w ~w ~w ~w ~w~n", [I, Zr, Zi, Zsr, Zsi, Tmp]),
     %% Stoping if we didn't update anything
     if
 	((Zr == Znr) and (Zi == Zni)) ->
-	    0;
+	    {0, {Zr, Zi}};
 	true -> 
 	    test_p(I + 1, Znr, Zni, Znr * Znr, Zni * Zni, Cr, Ci, M)
     end.
 
 
-%% Trying to build a cache
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-initiate() ->
-    Tree = gb_trees:empty(),
-    spawn_link(fun () -> listener(Tree) end).
-
-listener(Tree)->
-    receive 
-	{{Cr, Ci} = Key, M, Ret} ->
-		io:write(Key),
-		io:format("~n"),
-	    case gb_trees:lookup(Key, Tree) of
-		{value, Value} ->
-		    Ret ! Value,
-		    io:format("-"),
-		    listener(Tree);
-		none ->
-		    Value = test_p(0, 0, 0, 0, 0, Cr, Ci, M),
-		    Ret ! Value,
-		    listener(gb_trees:insert(Key, Value, Tree))
-		end
-    end.
-	    
-test_c(C, M, Provider) ->
-    Provider ! {C, M, self()},
-    receive
-	Var ->
-	    Var
-    end.
+test_c(_Cr, _Ci, _M) ->
+    io:write("Not the right one").
