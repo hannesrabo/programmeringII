@@ -1,11 +1,29 @@
 -module(mandelbrot).
--export([demo/0, small_p/5, gen/6, gen_simple/3]).
+-export([demo/0, small_p/5, gen/6, gen_simple/3, bench_c_big/0, bench_big/0]).
 
 demo() ->
-    io:format("Original: ~n"),
+    io:format("Original: ~n"),    
     big(-2.6, 1.2, 1.6),
-    io:format("New and improved: ~n"),
+	io:format("New and improved: ~n"),
     gen(-2.6, 1.2, 1.6, 1024, 1920, 1080).
+
+%% Generate a picture in HD as a benchmark (slow edition)
+bench_big() ->
+    big(-2.6, 1.2, 1.6).
+
+%% Generate a picture in HD as a benchmark fast edition.
+bench_c_big() ->
+	Width = 1920,
+    Height = 1080,
+    K = (1.6 +2.6) / Width,
+    Depth = 1024,
+    T0 = now(),
+    Image = mandel:mandelbrot_p(Width, Height, -2.6, 1.2, K, Depth, 8),
+    T = timer:now_diff(now(), T0),
+    io:format("picture generated in ~w ms~n", [T div 1000]),
+    ppm:write("./bench_c_big.ppm", Image).
+
+
 
 small(X, Y, X1) ->
     Width = 960,
@@ -33,7 +51,7 @@ big(X, Y, X1) ->
 gen(X, Y, X1, Depth, Width, Height) ->
     K = (X1 - X) / Width,
     T0 = now(),
-    Image = mandel:mandelbrot_p(Width, Height, X, Y, K, Depth, 8),
+    Image = mandel:mandelbrot_p(Width, Height, X, Y, K, Depth, 7),
     T = timer:now_diff(now(), T0),
     io:format("picture_p generated in ~w ms~n", [T div 1000]),
     ppm:write("./pic.ppm", Image).

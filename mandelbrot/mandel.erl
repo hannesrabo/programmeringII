@@ -135,12 +135,13 @@ row_p(X, Y, Width, Height, Trans, Depth, List) ->
     
 %   {Num_t, Z} = brot:mandelbrot_p(Trans(X, Y), Depth),
     {Cr, Ci} = Trans(X, Y),
-    {Num, Zr, Zi} = brot:test_c(float(Cr), float(Ci), Depth),
+    {Num, _Zr, _Zi} = brot:test_c(float(Cr), float(Ci), Depth),
     %% Convert to color
     %% Col = color:convert(Num, Depth),
 %   io:format("~w ~w ~w ~w~n", [Num_t, Num, Cr, Ci]),
 
-    Col = color:fancy_conv(Num, Depth, {Zr, Zi}),
+%   Col = color:fancy_conv(Num, Depth, {Zr, Zi}),
+	Col = color:convert(Num, Depth),
 
     %% Insert into list
     row_p(X + 1, Y, Width, Height, Trans, Depth, [Col | List]).

@@ -2,29 +2,24 @@
 #include <erl_nif.h>
 
 // This is compiled as folows:
-// gcc -o brot_c.so -fpic -shared brot_c.c -I /usr/lib/erlang/erts-8.2/include
+// gcc -o brot_c.so -fpic -shared brot_c.c -I /usr/lib/erlang/erts-8.2/include -O4
 
 extern int test_c(int x);
 
+
+
+
 static ERL_NIF_TERM test_c_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-  double Cr, Ci, P, Q;
-  long double Zr, Zi, Zsr, Zsi, tmp;
+  double Cr, Ci, P, Q, Zr, Zi, Zsr, Zsi, tmp;
   int i, m;
 
-  /*
-3 7 -1.13 -0.6900000000000002
-4 12 -0.9199999999999999 -0.6900000000000002
-5 0 -0.71 -0.6900000000000002
-10 0 -0.5 -0.6900000000000002
-
-   */
-  
-  //Creating all variables
+  // Creating all variables
   enif_get_double(env, argv[0],&Cr);
   enif_get_double(env, argv[1],&Ci);
   enif_get_int(env, argv[2], &m);
 
+  // Setting some default values
   Zr = 0;
   Zi = 0;
   Zsr = 0;
@@ -39,9 +34,10 @@ static ERL_NIF_TERM test_c_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv
     
     // Calculate the mandelbrot value
     while( i < m) {
-      // End the loop: The variable escaped
+
+	  // End the loop: The variable escaped
       if((Zsr + Zsi) >= 4) {
-	return enif_make_tuple3(env, enif_make_int(env, i), enif_make_double(env, Zr), enif_make_double(env, Zi));
+		return enif_make_tuple3(env, enif_make_int(env, i), enif_make_double(env, Zr), enif_make_double(env, Zi));
       }
 
       // Do the real calculations
@@ -49,20 +45,21 @@ static ERL_NIF_TERM test_c_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv
       Zr = Zsr - Zsi + Cr;
       Zi = tmp + tmp + Ci;
       
-      //Update
+      //Update values
       Zsr = Zr * Zr;
       Zsi = Zi * Zi;
       i++;
 
     }
 
+
     // Got stuck in here (i > m before return)
     return enif_make_tuple3(
-			    env, enif_make_int(env, 0),
-			    enif_make_double(env, Zr),
-			    enif_make_double(env, Zi)
-			    );
-    
+							env, enif_make_int(env, 0),
+							enif_make_double(env, Zr),
+							enif_make_double(env, Zi)
+							);
+	
   } else {
     // Return 0 and input args if out of range
     return enif_make_tuple3(env, enif_make_int(env, i), enif_make_double(env, Cr), enif_make_double(env, Ci));
