@@ -1,4 +1,4 @@
-# programmeringII
+# programmering II
 
 course work in the erlang programming classes at KTH 2017. Includes among others:
 
